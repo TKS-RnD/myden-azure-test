@@ -1,0 +1,4 @@
+Az.Sql
+dbachecks
+dbatools
+SqlServer

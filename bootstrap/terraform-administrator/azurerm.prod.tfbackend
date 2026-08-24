@@ -1,0 +1,5 @@
+# Back end file for storing values in Azure RM provider.
+resource_group_name = "rg-tfstate-fk9yatlf"
+storage_account_name = "rstfstatew0cey8mu"
+container_name = "rs-tfstate"
+key = "bootstrap/terraform-administrator"

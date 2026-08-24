@@ -1,0 +1,5 @@
+# Back end file for storing values in Azure RM provider.
+resource_group_name = "rg-tfstate"
+storage_account_name = "tfstate7shrl"
+container_name = "tfstate"
+key = "azure-poc/single-sign-on"

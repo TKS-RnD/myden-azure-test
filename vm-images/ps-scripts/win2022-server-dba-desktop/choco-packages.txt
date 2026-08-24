@@ -1,0 +1,8 @@
+azcopy10
+azure-data-studio
+dbatools-library.powershell
+microsoftazurestorageexplorer
+sqlcmd
+SqlPackage
+sql-server-management-studio
+windirstat

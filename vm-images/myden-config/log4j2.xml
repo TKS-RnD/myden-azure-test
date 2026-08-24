@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <configuration status="off">
+      <Properties>
+            <Property name="basePath">D:\\ApplicationLogs\\MyDEN\\Dev\\</Property>
+            <property name="fileName">MyDEN</property>
+            <property name="receipients"></property>
+    <property name="from">MYDEN-WEB-Dev</property>  
+		<property name="smtpHost">mail.denave.com</property>
+		<property name="smtpPort">25</property>
+		<property name="smtpProtocol">smtp</property>
+		<property name="smtpUser"></property>
+		<property name="smtpPassword"></property>
+            <property name="subject">Error detected in NewMyDEN Web Apps</property>
+      </Properties>
+      <Appenders>
+            <!-- <Appender type="Console" name="Console"> <Layout type="PatternLayout" 
+                  pattern="%d %p [%t] %m%n" /> </Appender> <Appender type="Console" name="FLOW"> 
+                  <Layout type="PatternLayout" pattern="%C{1}.%M %m %ex%n" /> </Appender> -->
+            <!-- <Appender type="File" name="File" fileName="${filename}">
+                  <Layout type="PatternLayout" pattern="%d %p %C{1.} [%t] %m%n" />
+            </Appender> -->
+
+            <!-- <SMTP name="Mailer" suppressExceptions="false" subject="${subject}" 
+                  to="${receipients}" from="${from}" smtpHost="${smtpHost}" smtpPort="${smtpPort}" 
+                  smtpProtocol="${smtpProtocol}" smtpUsername="${smtpUser}" smtpPassword="${smtpPassword}" 
+                  smtpDebug="false" bufferSize="20"> <ThresholdFilter level="debug" onMatch="NEUTRAL" 
+                  onMismatch="DENY" /> <PatternLayout> <pattern>%d{dd-MM-yyyy HH:mm:ss,SSS} 
+                  %5p %m%n</pattern> </PatternLayout> </SMTP> -->
+            <SMTP name="Mailer" subject="${subject}" to="${receipients}"
+                  from="${from}" smtpHost="${smtpHost}" smtpPort="${smtpPort}"
+                  smtpProtocol="${smtpProtocol}" smtpUsername="${smtpUser}"
+                  smtpPassword="${smtpPassword}" smtpDebug="false" bufferSize="20">
+
+                  <!-- <ThresholdFilter level="debug" onMatch="NEUTRAL"
+                        onMismatch="DENY" /> -->
+                  <PatternLayout>
+                        <pattern>%d{dd-MM-yyyy HH:mm:ss,SSS} %5p %m%n</pattern>
+                  </PatternLayout>
+            </SMTP>
+
+            <Async name="AsyncMailer">
+                  <AppenderRef ref="Mailer" />
+            </Async>
+            
+             <RollingFile name="fileLogger" fileName="${basePath}/${fileName}.log" filePattern="${basePath}/${fileName}-%d{yyyy-MM-dd}.log">
+            <PatternLayout>
+                <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+            </Policies>
+        </RollingFile>
+            
+      </Appenders>
+      
+      
+      <Loggers>
+            <!-- <Root level="debug">
+                  <AppenderRef ref="File" />
+                  <AppenderRef ref="Console" />
+                  <AppenderRef ref="AsyncMailer" level="error" />
+                  Use FLOW to trace down exact method sending the msg
+                  <AppenderRef ref="FLOW" />
+
+            </Root> -->
+            
+      
+    <Root level="info">
+      <!-- <AppenderRef ref="databaseAppender"/> -->
+      <AppenderRef ref="fileLogger"/>
+       <AppenderRef ref="AsyncMailer" level="error" />
+    </Root>
+            
+      </Loggers>
+</configuration>

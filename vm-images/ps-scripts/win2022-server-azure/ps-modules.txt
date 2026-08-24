@@ -1,0 +1,2 @@
+Az.KeyVault
+Az.Sql

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- No Shutdown port (hardened: disables shutdown listener) -->
+<Server port="-1" shutdown="SHUTDOWN">
+  <!-- Listeners -->
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener"/>
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener"/>
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener"/>
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener"/>
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on"/>
+  <!-- Global JNDI resources -->
+  <GlobalNamingResources>
+    <Resource name="UserDatabase" auth="Container" type="org.apache.catalina.UserDatabase" description="User database that can be updated and saved" factory="org.apache.catalina.users.MemoryUserDatabaseFactory" pathname="conf/tomcat-users.xml"/>
+  </GlobalNamingResources>
+  <!-- Catalina configuration -->
+  <Service name="Catalina">
+    <!-- HTTP Connector (behind Azure WAF; binds to all interfaces)
+         - address: Bind to 0.0.0.0 since there is NO local reverse proxy; access is restricted via NSG/WAF
+         - timeouts: tightened for WAF (30s)
+         - encoding/header limits: UTF-8, 16KB headers, tuned parameter count
+         - connection tuning sized for ~8 vCPU / 16 GB RAM VM (adjust per load testing)
+         - compression: enabled for plaintext hop from WAF to Tomcat
+         - product info: suppressed via server=""
+         - DNS lookups: explicitly disabled
+    -->
+    <Connector port="8080" protocol="HTTP/1.1" address="0.0.0.0" connectionTimeout="30000" keepAliveTimeout="20000" maxKeepAliveRequests="100" acceptCount="200" maxThreads="300" maxParameterCount="1000" URIEncoding="UTF-8" maxHttpHeaderSize="16384" enableLookups="false" compression="on" compressionMinSize="2048" noCompressionUserAgents="" compressableMimeType="text/html,text/xml,text/plain,text/css,application/json,application/javascript,application/xml,text/javascript,application/xhtml+xml,application/xml+rss,application/x-javascript,application/x-json" server="" redirectPort="-1"/>
+    <!-- AJP connector disabled -->
+    <!-- <Connector protocol="AJP/1.3" port="8009" /> -->
+    <Engine name="Catalina" defaultHost="localhost">
+      <!--
+        Realm: Authenticate users from conf/tomcat-users.xml using SHA-256 digests
+        - LockOutRealm protects against brute-force by temporarily locking accounts
+        - UserDatabaseRealm reads users/roles from GlobalNamingResources -> UserDatabase
+        - MessageDigestCredentialHandler configured for SHA-256 hex (matching sha256sum output)
+      -->
+      <Realm className="org.apache.catalina.realm.LockOutRealm">
+        <Realm className="org.apache.catalina.realm.UserDatabaseRealm" resourceName="UserDatabase">
+          <CredentialHandler className="org.apache.catalina.realm.MessageDigestCredentialHandler" algorithm="SHA-256" iterations="1"/>
+        </Realm>
+      </Realm>
+      <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="false">
+        <!-- Reverse Proxy / WAF integration
+             - Do NOT trust unknown proxy IPs here; headers may be ignored if proxy is not marked internal
+             - With NSG/WAF in front and unknown AppGW IPs, we omit internalProxies on purpose
+             - Use forwarded proto/host for correct scheme/host in app logic
+        -->
+        <Valve className="org.apache.catalina.valves.RemoteIpValve" remoteIpHeader="x-forwarded-for" proxiesHeader="x-forwarded-by" protocolHeader="x-forwarded-proto" protocolHeaderHttpsValue="https" hostHeader="x-forwarded-host" requestAttributesEnabled="true"/>
+        <!-- Health check endpoint helper
+             - Optional Valve to respond quickly on /health-check without touching app stack
+             - Also sets a request attribute that we reference via AccessLogValve condition to skip logging
+        -->
+        <Valve className="org.apache.catalina.valves.HealthCheckValve" path="/health-check"/>
+        <!-- Access log for correlation with WAF
+             - Use %a (client IP after RemoteIpValve) instead of %h
+             - Include %A (local address) and %p (local port)
+             - Include raw forwarded headers for incident forensics
+             - conditionUnless skips logs for health-check (HealthCheckValve sets the standard skip attribute)
+             - Rotation/retention:
+                 * rotatable=true with daily suffix (fileDateFormat)
+                 * maxDays=7 (supported in Tomcat 9.0.69+). If unsupported, it will be ignored and external log management should enforce retention.
+        -->
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs" prefix="localhost_access_log" suffix=".txt" rotatable="true" renameOnRotate="true" fileDateFormat="yyyy-MM-dd" maxDays="7" conditionUnless="org.apache.catalina.AccessLog.SKIP" pattern="%a %A %p %l %u %t &quot;%r&quot; %s %b &quot;%{User-Agent}i&quot; &quot;%{Referer}i&quot; %{X-Forwarded-For}i %{X-Forwarded-Host}i %{X-Forwarded-Proto}i"/>
+        <!-- Error reporting hardening: hide stack traces and server info on default error pages -->
+        <Valve className="org.apache.catalina.valves.ErrorReportValve" showReport="false" showServerInfo="false"/>
+      </Host>
+    </Engine>
+  </Service>
+</Server>
