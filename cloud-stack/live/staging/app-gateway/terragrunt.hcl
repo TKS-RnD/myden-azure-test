@@ -22,6 +22,7 @@ dependency "network" {
       waf_subnet = {
         id           = "waf-subnet-id"
         ip           = "1.2.3.4"
+        ip_id        = "waf-public-ip-id"
         name_servers = ["a1.azure.net", "a2.azure.net"]
         waf_host     = "waf.az.example.com"
         waf_domain   = "az.example.com"
@@ -49,7 +50,9 @@ dependency "base" {
   mock_outputs = {
     managed_identities = {
       "GitHub-Cert-Rotator" = {
-        id = "some-mocked-id"
+        id                  = "some-mocked-id"
+        principal_id        = "some-mocked-principal-id"
+        resource_group_name = "rg-staging-base"
       }
     }
   }

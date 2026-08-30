@@ -39,12 +39,24 @@ dependency "base" {
         principal_id = "mock-id"
       }
       "GitHub-War-Pusher" = {
-        name         = "mi-app-github-staging"
-        principal_id = "mock-id-2"
+        name                = "mi-app-github-staging"
+        principal_id        = "mock-id-2"
+        id                  = "mock-gh-id"
+        client_id           = "mock-gh-client-id"
+        tenant_id           = "mock-gh-tenant-id"
+        resource_group_name = "rg-staging-base"
       }
       "Jenkins-War-Pusher" = {
         name         = "mi-jenkins-war-pusher-staging"
         principal_id = "mock-id-2"
+      }
+    }
+    managed_applications = {
+      "Jenkins-War-Pusher" = {
+        service_principal_id = "mock-sp-id"
+        application_id       = "mock-app-id"
+        tenant_id            = "mock-tenant-id"
+        password             = "mock-password"
       }
     }
   }

@@ -15,6 +15,9 @@ dependency "network" {
         network-a = "mock-id-1"
         network-b = "mock-id-2"
       }
+      support_subnet = {
+        id = "mock-support-subnet-id"
+      }
     }
   }
 }
@@ -28,7 +31,7 @@ dependency "base" {
       "Support Personnel" = "mocked-id"
     }
     resource_groups = {
-      suppport = "rg-staging-support"
+      support = "rg-staging-support"
     }
     managed_identities = {
       "Application VM" = {

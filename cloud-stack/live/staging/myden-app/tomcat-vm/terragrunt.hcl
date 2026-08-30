@@ -46,9 +46,11 @@ dependency "war_storage" {
       }
     }
     keyvault = {
-      name        = "secret-key-vault"
-      secret_name = "secret-name"
-      identity    = "mocked-id"
+      name = "secret-key-vault"
+      secret_names = {
+        for_mounting_vms = "war-storage-account-key"
+      }
+      identity = "mocked-id"
     }
   }
 }
