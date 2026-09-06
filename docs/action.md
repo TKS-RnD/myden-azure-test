@@ -12,6 +12,64 @@ Replace `staging` with `prod` / `uat` where those var/backend files exist. Alway
 
 ---
 
+## 0. Prerequisites (install before running anything)
+
+Which tool each phase needs:
+
+| Tool | Needed for | Version note |
+| --- | --- | --- |
+| Azure CLI (`az`) | everything (auth) | latest |
+| PowerShell Core (`pwsh`) | `bootstrap/ps-scripts/*` (state bucket, PIM scripts) | 7.x |
+| Terraform | `bootstrap/*`, `single-sign-on/` | **1.13.2** (pinned in `.tool-versions`) |
+| Terragrunt | `cloud-stack/live/*` | **0.93.0** (pinned in `cloud-stack/live/.tool-versions`) |
+| Packer | `vm-images/packer/*` | latest (Azure plugin `>= 1.5.0`) |
+| Google Cloud CLI (`gcloud`) | `single-sign-on/` only | latest |
+| OpenTofu (optional) | drop-in for Terraform (`.tool-versions` lists `tofu 1.10.6`) | 1.10.6 |
+
+> Versions are pinned via `.tool-versions` files, so installing [asdf](https://asdf-vm.com/) or [mise](https://mise.jdx.dev/) and running `asdf install` / `mise install` in each directory is the most reliable way to match Terraform/Terragrunt/OpenTofu versions across a team.
+
+### Azure CLI
+- **Linux:** `curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash` — [docs](https://learn.microsoft.com/cli/azure/install-azure-cli-linux)
+- **macOS:** `brew install azure-cli` — [docs](https://learn.microsoft.com/cli/azure/install-azure-cli-macos)
+- **Windows:** `winget install --id Microsoft.AzureCLI -e` — [docs](https://learn.microsoft.com/cli/azure/install-azure-cli-windows)
+
+### PowerShell Core (`pwsh`)
+- **Linux:** `sudo apt-get install -y powershell` (after adding the Microsoft repo) — [docs](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-linux)
+- **macOS:** `brew install --cask powershell` — [docs](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-macos)
+- **Windows:** `winget install --id Microsoft.PowerShell -e` — [docs](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows)
+
+### Terraform (1.13.2)
+- **Linux:** via HashiCorp apt repo, or `asdf install terraform 1.13.2` — [install guide](https://developer.hashicorp.com/terraform/install)
+- **macOS:** `brew tap hashicorp/tap && brew install hashicorp/tap/terraform` — [install guide](https://developer.hashicorp.com/terraform/install)
+- **Windows:** `winget install --id Hashicorp.Terraform -e` — [install guide](https://developer.hashicorp.com/terraform/install)
+
+### Terragrunt (0.93.0)
+- **Linux / macOS:** `brew install terragrunt`, or `asdf install terragrunt 0.93.0`, or download the binary — [install guide](https://terragrunt.gruntwork.io/docs/getting-started/install/)
+- **Windows:** `winget install --id Gruntwork.Terragrunt -e` or download the `.exe` — [install guide](https://terragrunt.gruntwork.io/docs/getting-started/install/)
+
+### Packer
+- **Linux:** HashiCorp apt repo (`sudo apt-get install packer`) — [install guide](https://developer.hashicorp.com/packer/install)
+- **macOS:** `brew tap hashicorp/tap && brew install hashicorp/tap/packer` — [install guide](https://developer.hashicorp.com/packer/install)
+- **Windows:** `winget install --id Hashicorp.Packer -e` — [install guide](https://developer.hashicorp.com/packer/install)
+
+### Google Cloud CLI (`gcloud`) — SSO only
+- **Linux:** `sudo apt install google-cloud-cli` — [install guide](https://cloud.google.com/sdk/docs/install)
+- **macOS:** `brew install --cask google-cloud-sdk` — [install guide](https://cloud.google.com/sdk/docs/install)
+- **Windows:** `winget install -e --id Google.CloudSDK` — [install guide](https://cloud.google.com/sdk/docs/install)
+
+### asdf / mise (optional version managers, match pinned versions)
+- **asdf:** [asdf-vm.com/guide/getting-started](https://asdf-vm.com/guide/getting-started.html) — then `asdf plugin add terraform && asdf install` inside a directory with `.tool-versions`.
+- **mise:** [mise.jdx.dev/getting-started](https://mise.jdx.dev/getting-started.html) — then `mise install` inside a directory with `.tool-versions`.
+
+**Per-phase checklist:**
+- Bootstrap state bucket → Azure CLI + PowerShell Core
+- Bootstrap proxy app / TF administrator → Azure CLI + PowerShell Core + Terraform
+- Single sign-on → Azure CLI + PowerShell Core + Terraform + Google Cloud CLI
+- Packer images → Azure CLI + Packer
+- Cloud stack → Azure CLI + Terraform + Terragrunt
+
+---
+
 ## 1. Bootstrap (plain Terraform, run first, super-admin only)
 
 ### 1a. TF state bucket — `bootstrap/ps-scripts/create-tf-state-bucket.ps1`
