@@ -89,6 +89,18 @@ terraform destroy -var-file=staging.tfvars      # teardown
 ```
 
 ### 1c. Terraform administrator — `bootstrap/terraform-administrator/`
+
+> **⚠️ Seed your admin identity BEFORE running this — and before any cloud-stack terragrunt scripts.**
+> This module grants a human user admin/owner access and creates the PIM-gated **Terraform Administrator** group that every cloud-stack `terragrunt` command is later run as. Edit **`bootstrap/terraform-administrator/staging.tfvars`** (and `prod.tfvars` / `uat.tfvars` for other envs) and add your Azure AD **UPN** (e.g. `you@yourtenant.onmicrosoft.com`; the user must already exist in the tenant) in these places:
+>
+> | Variable | Purpose | Add your id here? |
+> | --- | --- | --- |
+> | `terraform-admin-group-eligible-users` | Makes the user **PIM-eligible** for the Terraform Administrator group you activate and run terragrunt as. | **Yes — required.** |
+> | `terraform-builtin-roles-users` | Grants directory/built-in roles (PIM-eligible), e.g. User Administrator. | Usually yes. |
+> | `resource_groups_owner_access` | Resource groups the admin gets Owner on (e.g. `myden-staging`). | As needed. |
+>
+> Values are UPNs resolved via `data "azuread_user"`. After apply, activate the group before running the cloud stack (see below). The in-stack admin **groups** created by `cloud-stack/modules/base` (`Azure App VM Administrators`, `Azure Database Administrators`, `Break Glass Vault Access`, `Support Personnel`) are populated with members *after* `base` is applied, not here.
+
 ```bash
 cd bootstrap/terraform-administrator
 terraform init  -backend-config=azurerm.staging.tfbackend -var-file=staging.tfvars
@@ -98,7 +110,7 @@ terraform destroy -var-file=staging.tfvars
 ```
 Requires Entra ID P2 (PIM). Supporting PIM scripts (not init/apply):
 ```bash
-pwsh bootstrap/ps-scripts/activate-pim-group.ps1
+pwsh bootstrap/ps-scripts/activate-pim-group.ps1     # activate Terraform Administrator group before running cloud-stack terragrunt
 pwsh bootstrap/ps-scripts/activate-pim-role.ps1
 ```
 
