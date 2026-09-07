@@ -7,6 +7,28 @@ What to keep in mind when destroying the platform so a fresh start on the **same
 
 > **Golden rule:** always run `terragrunt run-all destroy` (leaves → base) first. Manual deletion is only for cleaning up leftovers or when state is lost. Never delete Terraform **state** until the real resources are actually gone — deleting state first orphans them.
 
+## Do you need to follow dependency order when destroying?
+
+**Yes — destroy in the REVERSE of the apply/dependency order (leaves → roots). You cannot destroy modules in any order.**
+
+Units reference each other's outputs (subnet IDs, resource groups, managed identities), so a downstream unit must be gone before the unit it depends on. For example `app-gateway` points at `tomcat-vm`'s IP, and every unit depends on `base` (resource groups + AD identities) — so `base` is destroyed **last**.
+
+| Situation | Do you sequence manually? |
+| --- | --- |
+| `terragrunt run-all destroy` (from `cloud-stack/live/staging/`) | **No.** Terragrunt reads the `dependency` graph and destroys in the correct reverse order automatically. Preferred method. |
+| Per-unit `terragrunt destroy` | **Yes.** You must run them leaves → roots yourself (see order below). |
+| Manual `az group delete` (state lost) | **Yes.** Azure will delete RGs in any order, but doing it out of order leaves orphaned cross-RG references (e.g. NICs pointing at a deleted subnet). Follow the same reverse order. |
+
+**Reverse destroy order (leaves → roots):**
+```
+app-gateway
+  → myden-app/tomcat-vm  (and support/vm if enabled)
+    → war-storage, support/log-storage, myden-app/mssql-db, dba-vm
+      → network, vault-vm-break-glass
+        → base            ← destroy LAST (owns the resource groups + AD identities)
+```
+See [dependency.md](dependency.md) for the full graph. This is exactly the apply order reversed.
+
 ---
 
 ## Part 1 — Resource groups created during apply
@@ -34,10 +56,10 @@ All values shown for `staging` (`<env>` = the `environment` local in `root.hcl`)
 cd cloud-stack/live/staging
 terragrunt run-all destroy       # destroys all units in reverse dependency order (removes the RGs above)
 ```
-Or per unit (reverse order): `app-gateway` → VMs → storage/db → `network`/`vault-vm-break-glass` → `base`.
+Or per unit — **must be run in the reverse order shown above** (`app-gateway` → VMs → storage/db → `network`/`vault-vm-break-glass` → `base`). `base` is always last:
 ```bash
 cd cloud-stack/live/staging/base
-terragrunt destroy               # removes rg-base-staging + the six rg-staging-* groups
+terragrunt destroy               # removes rg-base-staging + the six rg-staging-* groups — run LAST
 ```
 
 ### Manual RG deletion (only if state is lost / leftovers remain)
