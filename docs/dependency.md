@@ -21,7 +21,7 @@ These are standalone Terraform roots, not Terragrunt units. They are ordered by 
 
 ## 1. Cloud-stack run order (`cloud-stack/live/staging/`)
 
-Run per-unit with `terragrunt apply` inside each directory, or all at once with `terragrunt run-all apply` from `cloud-stack/live/staging/` (Terragrunt resolves this order automatically).
+Run per-unit with `terragrunt apply` inside each directory, or all at once with `terragrunt run --all apply` from `cloud-stack/live/staging/` (Terragrunt resolves this order automatically).
 
 ```
 Tier 0  base                     ← run first, nothing depends on before it
@@ -127,6 +127,8 @@ flowchart TD
 
 ## 5. Quick apply/destroy rules
 
-- **Apply:** `base` → `network`/`vault-vm-break-glass` → storage + db + dba-vm → tomcat-vm/support-vm → app-gateway. Or just `terragrunt run-all apply` from `cloud-stack/live/staging/`.
-- **Destroy:** reverse order. `terragrunt run-all destroy` handles it; if going manually, tear down leaves first (`app-gateway`, then VMs, then storage/db, then `network`/`vault`, then `base`).
+- **Apply:** `base` → `network`/`vault-vm-break-glass` → storage + db + dba-vm → tomcat-vm/support-vm → app-gateway. Or just `terragrunt run --all apply` from `cloud-stack/live/staging/`.
+- **Destroy:** reverse order. `terragrunt run --all destroy` handles it; if going manually, tear down leaves first (`app-gateway`, then VMs, then storage/db, then `network`/`vault`, then `base`).
+
+> Terragrunt CLI note: newer Terragrunt replaced the top-level `run-all` with `run --all` (e.g. `terragrunt run --all apply`). If you get `unknown command: "run-all"`, use the `run --all` form.
 - `mock_outputs` let each unit `plan`/`validate` standalone before its dependencies exist, but a real `apply` still requires the upstream units to be applied first.

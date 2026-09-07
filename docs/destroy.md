@@ -5,7 +5,9 @@ What to keep in mind when destroying the platform so a fresh start on the **same
 1. **Resource groups created during apply** — what they are, which unit creates them, and how to delete manually.
 2. **Everything NOT inside those resource groups** — tenant-level Azure AD objects, subscription-scoped role definitions, soft-deleted Key Vaults, Terraform state, and images. These survive RG deletion and often **block a re-apply**.
 
-> **Golden rule:** always run `terragrunt run-all destroy` (leaves → base) first. Manual deletion is only for cleaning up leftovers or when state is lost. Never delete Terraform **state** until the real resources are actually gone — deleting state first orphans them.
+> **Golden rule:** always run `terragrunt run --all destroy` (leaves → base) first. Manual deletion is only for cleaning up leftovers or when state is lost. Never delete Terraform **state** until the real resources are actually gone — deleting state first orphans them.
+
+> **Terragrunt CLI note:** the old top-level `terragrunt run-all <cmd>` was removed in the Terragrunt [CLI redesign](https://terragrunt.gruntwork.io/docs/migrate/cli-redesign) (versions newer than the `0.93.0` pinned in `.tool-versions`). Use `terragrunt run --all <cmd>`. If you see `unknown command: "run-all"`, that is the fix.
 
 ## Do you need to follow dependency order when destroying?
 
@@ -15,7 +17,7 @@ Units reference each other's outputs (subnet IDs, resource groups, managed ident
 
 | Situation | Do you sequence manually? |
 | --- | --- |
-| `terragrunt run-all destroy` (from `cloud-stack/live/staging/`) | **No.** Terragrunt reads the `dependency` graph and destroys in the correct reverse order automatically. Preferred method. |
+| `terragrunt run --all destroy` (from `cloud-stack/live/staging/`) | **No.** Terragrunt reads the `dependency` graph and destroys in the correct reverse order automatically. Preferred method. |
 | Per-unit `terragrunt destroy` | **Yes.** You must run them leaves → roots yourself (see order below). |
 | Manual `az group delete` (state lost) | **Yes.** Azure will delete RGs in any order, but doing it out of order leaves orphaned cross-RG references (e.g. NICs pointing at a deleted subnet). Follow the same reverse order. |
 
@@ -54,7 +56,7 @@ All values shown for `staging` (`<env>` = the `environment` local in `root.hcl`)
 ### Preferred destroy (Terragrunt handles RGs automatically)
 ```bash
 cd cloud-stack/live/staging
-terragrunt run-all destroy       # destroys all units in reverse dependency order (removes the RGs above)
+terragrunt run --all destroy     # destroys all units in reverse dependency order (removes the RGs above)
 ```
 Or per unit — **must be run in the reverse order shown above** (`app-gateway` → VMs → storage/db → `network`/`vault-vm-break-glass` → `base`). `base` is always last:
 ```bash
@@ -171,7 +173,7 @@ az image delete -g golden-images -n win2022-tomcat-base-openjdk17
 
 ## Recommended fresh-start teardown order
 
-1. `cd cloud-stack/live/staging && terragrunt run-all destroy` (leaves → base; removes all Part 1 RGs).
+1. `cd cloud-stack/live/staging && terragrunt run --all destroy` (leaves → base; removes all Part 1 RGs).
 2. If doing a full reset: `terraform destroy` in `single-sign-on/`, then `bootstrap/terraform-administrator/`, then `bootstrap/intermediate-proxy-app/`.
 3. Handle **soft-deleted Key Vaults** (§1) — recover-and-reuse names, or rename for the new deploy.
 4. Confirm **AD objects** (§2), **custom roles + assignments** (§3) are gone; delete leftovers by name.

@@ -196,12 +196,14 @@ terragrunt apply
 Run from the environment root `cloud-stack/live/staging/`:
 ```bash
 cd cloud-stack/live/staging
-terragrunt run-all init
-terragrunt run-all plan
-terragrunt run-all apply       # base → network/vault → storage/db/dba → VMs → app-gateway
-terragrunt run-all destroy     # reverse order
+terragrunt run --all init
+terragrunt run --all plan
+terragrunt run --all apply       # base → network/vault → storage/db/dba → VMs → app-gateway
+terragrunt run --all destroy     # reverse order
 ```
-See `docs/dependency.md` for the tiered order that `run-all` follows.
+See `docs/dependency.md` for the tiered order that `run --all` follows.
+
+> **Terragrunt CLI note:** the old top-level `terragrunt run-all <cmd>` was removed in the Terragrunt [CLI redesign](https://terragrunt.gruntwork.io/docs/migrate/cli-redesign) (versions newer than the `0.93.0` pinned in `.tool-versions`). Use `terragrunt run --all <cmd>` instead. If you see `unknown command: "run-all"`, this is the fix. Single-unit commands (`terragrunt init/plan/apply/destroy`) are unchanged.
 
 ---
 
@@ -216,6 +218,6 @@ See `docs/dependency.md` for the tiered order that `run-all` follows.
 | Tomcat image | `vm-images/packer/win2022-server-azure/` | `packer init .` | `packer validate -var-file=staging.pkvars.hcl .` | `packer build -var-file=staging.pkvars.hcl .` | `az image delete` |
 | DBA image | `vm-images/packer/win2022-server-dba-desktop/` | `packer init .` | `packer validate -var-file=staging.pkvars.hcl .` | `packer build -var-file=staging.pkvars.hcl .` | `az image delete` |
 | Any cloud-stack unit | `cloud-stack/live/staging/<unit>/` | `terragrunt init` | `terragrunt plan` | `terragrunt apply` | `terragrunt destroy` |
-| Whole cloud stack | `cloud-stack/live/staging/` | `terragrunt run-all init` | `terragrunt run-all plan` | `terragrunt run-all apply` | `terragrunt run-all destroy` |
+| Whole cloud stack | `cloud-stack/live/staging/` | `terragrunt run --all init` | `terragrunt run --all plan` | `terragrunt run --all apply` | `terragrunt run --all destroy` |
 
 > `prod` / `uat`: swap `staging` for the environment in both the `.tfbackend` and `.tfvars` / `.pkvars.hcl` filenames (available where those files exist). The cloud stack currently only has a `staging/` live tree.
