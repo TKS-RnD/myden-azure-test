@@ -1,0 +1,54 @@
+---
+
+### Suppression of Yaml Lint
+# yamllint disable rule:line-length
+# yamllint disable rule:truthy
+
+# Rotates WAF certificate for staging environment.
+name: Rotate WAF Certificate
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *'     # Run once a month
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  rotate-cert:
+    runs-on: ubuntu-latest
+    env:
+      DOMAIN: "az-staging.denuds.com"
+      KEY_VAULT_NAME: "waf-cert-kv-staging"
+      CERT_NAME: "prod-certificate"
+      EXPIRY_DAYS: 60
+      ACME_EMAIL: "devops@denave.com"
+      AZUREDNS_SUBSCRIPTIONID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZUREDNS_TENANTID: ${{ vars.AZURE_TENANT_ID }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install acme.sh
+        run: |
+          curl https://get.acme.sh | sh -s
+
+      - name: Request and Import Certificate
+        run: |
+          chmod +x scripts/shell/rotate-cert.sh
+          ./scripts/shell/rotate-cert.sh          \
+            --domain "${{ env.DOMAIN }}"          \
+            --vault "${{ env.KEY_VAULT_NAME }}"   \
+            --name "${{ env.CERT_NAME }}"         \
+            --email "${{ env.ACME_EMAIL }}"       \
+            --expiry "${{ env.EXPIRY_DAYS }}"
