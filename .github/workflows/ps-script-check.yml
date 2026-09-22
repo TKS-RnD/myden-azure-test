@@ -1,0 +1,20 @@
+---
+
+### Suppression of Yaml Lint
+# yamllint disable rule:line-length
+# yamllint disable rule:truthy
+
+# This workflows runs Powershell script analyzer.
+name: Check Powershell scripts
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  check-ps-scripts:
+    uses: TKS-RnD/workflows/.github/workflows/ps-script-analyzer-workflow.yml@main
