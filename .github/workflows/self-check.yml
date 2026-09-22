@@ -1,0 +1,27 @@
+---
+
+### Suppression of Yaml Lint
+# yamllint disable rule:line-length
+# yamllint disable rule:truthy
+
+# This workflows Self Checks YML configuration of all Github Workflows.
+name: Self Check GitHub Workflow Files
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - '.github/workflows/*.yml'
+  pull_request:
+    branches:
+      - main
+      - deploy
+    paths:
+      - '.github/workflows/*.yml'
+
+jobs:
+  self-check-yml:
+    uses: TKS-RnD/workflows/.github/workflows/self-check-gh-workflow.yml@main
+    with:
+      file_path: '.github/workflows/'
